@@ -1,22 +1,37 @@
+# Discord Widget Settings
 discord_server_id:
   type: string
   default: ""
+  description: "Your Discord server ID (found in Server Settings > Widget)"
+
 discord_invite_url:
   type: string
   default: ""
+  description: "Discord invite URL for mobile users"
+
+# Access Control Settings
 require_login:
   type: bool
   default: false
+  description: "Only show widget to logged in users"
+
 minimum_trust_level:
   type: integer
   default: 0
+  description: "Minimum trust level required to see the widget"
+
 require_staff:
   type: bool
   default: false
+  description: "Only show widget to staff members (moderators and admins)"
+
 required_groups:
   type: list
   list_type: group
   default: ""
+  description: "Only show widget to members of these groups"
+
+# Widget Appearance
 theme:
   type: enum
   choices:
@@ -24,3 +39,51 @@ theme:
     - dark
     - auto
   default: auto
+  description: "Discord widget theme (auto matches Discourse theme)"
+
+# Discord OAuth Integration Settings
+discord_oauth_service_url:
+  type: string
+  default: ""
+  description: "URL of your Discord OAuth service (e.g., https://your-oauth-app.herokuapp.com)"
+
+discord_field_id:
+  type: string  
+  default: "8"
+  description: "Discourse user field ID where Discord usernames are stored"
+
+show_discord_linking:
+  type: bool  
+  default: true
+  description: "Show Discord account linking option in the widget"
+
+discord_link_text:
+  type: string
+  default: "🔗 Link Discord Account"
+  description: "Text for the Discord linking button"
+
+show_discord_in_posts:
+  type: bool
+  default: true
+  description: "Show Discord usernames next to user names in posts"
+
+require_discord_link:
+  type: bool
+  default: false
+  description: "Require users to link Discord before accessing the widget"
+
+discord_unlink_text:
+  type: string
+  default: "Unlink"
+  description: "Text for the Discord unlinking button"
+
+# OAuth Popup Settings
+oauth_popup_width:
+  type: integer
+  default: 500
+  description: "Width of OAuth popup window in pixels"
+
+oauth_popup_height:
+  type: integer
+  default: 600
+  description: "Height of OAuth popup window in pixels"
