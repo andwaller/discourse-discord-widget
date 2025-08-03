@@ -1,0 +1,178 @@
+<!-- File: common/header.html -->
+<!-- Enhanced Discord Widget with OAuth Integration -->
+
+<script type="text/discourse-plugin" version="0.8.31">
+  const currentUser = api.getCurrentUser();
+  const isLoggedIn = !!currentUser;
+  
+  // Check if user meets access requirements
+  let hasAccess = true;
+  
+  if (settings.require_login && !isLoggedIn) {
+    hasAccess = false;
+  }
+  
+  if (isLoggedIn && settings.minimum_trust_level > 0) {
+    hasAccess = currentUser.trust_level >= settings.minimum_trust_level;
+  }
+  
+  if (isLoggedIn && settings.require_staff) {
+    hasAccess = currentUser.staff;
+  }
+  
+  if (isLoggedIn && settings.required_groups && settings.required_groups.length > 0) {
+    const userGroups = currentUser.groups || [];
+    const userGroupNames = userGroups.map(g => g.name);
+    hasAccess = settings.required_groups.some(group => userGroupNames.includes(group));
+  }
+  
+  // Check Discord link status
+  const discordField = isLoggedIn ? currentUser.user_fields?.[settings.discord_field_id] : null;
+  const hasDiscordLinked = !!(discordField && discordField.trim());
+  const showOAuthSection = settings.show_discord_linking && settings.discord_oauth_service_url;
+  
+  // Determine if widget should be shown
+  const showWidget = hasAccess && (!settings.require_discord_link || hasDiscordLinked || showOAuthSection);
+  
+  if (showWidget) {
+    // Add the Discord widget dropdown to header
+    api.decorateWidget("header-icons:before", function() {
+      return this.attach("header-dropdown", {
+        title: "Discord Server",
+        icon: "fab-discord",
+        iconId: "discord-widget-icon",
+        active: false,
+        action: "showDiscordWidget",
+        contents() {
+          const widgetTheme = settings.theme === 'auto' ? 
+            (document.body.classList.contains('dark') ? 'dark' : 'light') : 
+            settings.theme;
+          
+          let content = h("div.discord-widget-wrapper", [
+            // OAuth Section (if enabled and logged in)
+            ...(showOAuthSection && isLoggedIn ? [
+              h("div.discord-oauth-section", [
+                hasDiscordLinked ? 
+                  h("div.discord-linked-status", [
+                    h("div.discord-linked-info", [
+                      h("i.fab.fa-discord"),
+                      h("span", `Linked as: ${discordField}`)
+                    ]),
+                    h("button.discord-unlink-btn", {
+                      onclick: "unlinkDiscordAccount()",
+                      title: "Unlink Discord account"
+                    }, settings.discord_unlink_text || "Unlink")
+                  ]) :
+                  h("div.discord-not-linked", [
+                    h("p", "Link your Discord account to show your status"),
+                    h("button.discord-link-button", {
+                      onclick: "linkDiscordAccount()"
+                    }, [
+                      h("i.fab.fa-discord"),
+                      settings.discord_link_text || "🔗 Link Discord Account"
+                    ])
+                  ])
+              ])
+            ] : []),
+            
+            // Main Widget Section
+            settings.require_discord_link && !hasDiscordLinked && isLoggedIn ? 
+              h("div.discord-link-required", [
+                h("p", "Please link your Discord account to access the server widget."),
+                ...(showOAuthSection ? [] : [
+                  h("p", h("small", "Discord linking is not configured. Contact an administrator."))
+                ])
+              ]) :
+              h("div.discord-widget-container", [
+                settings.discord_server_id ? 
+                  h("iframe", {
+                    src: `https://discord.com/widget?id=${settings.discord_server_id}&theme=${widgetTheme}`,
+                    width: "350",
+                    height: "400",
+                    allowtransparency: "true",
+                    frameborder: "0",
+                    style: "border-radius: 6px;"
+                  }) :
+                  h("div", {
+                    style: "padding: 20px; text-align: center; color: var(--primary-medium);"
+                  }, "Discord server ID not configured")
+              ])
+          ]);
+          
+          return content;
+        }
+      });
+    });
+    
+    // Handle mobile invite link
+    if (settings.discord_invite_url) {
+      api.onPageChange(() => {
+        const isMobile = window.innerWidth <= 768;
+        const discordIcon = document.getElementById("discord-widget-icon");
+        
+        if (discordIcon && isMobile) {
+          discordIcon.closest(".header-dropdown-toggle").onclick = function(e) {
+            e.preventDefault();
+            window.open(settings.discord_invite_url, '_blank');
+          };
+        }
+      });
+    }
+  }
+  
+  // Custom CSS for the widget
+  const widgetCSS = `
+    .discord-widget-wrapper {
+      padding: 0;
+      min-width: 350px;
+      max-width: 350px;
+    }
+    
+    .discord-widget-container iframe {
+      display: block;
+      margin: 0 auto;
+    }
+    
+    #discord-widget-icon {
+      color: #5865F2 !important;
+    }
+    
+    .header-dropdown-toggle:hover #discord-widget-icon {
+      color: #4752C4 !important;
+    }
+    
+    .discourse-no-touch .btn:hover #discord-widget-icon {
+      color: #4752C4 !important;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .discord-widget-wrapper {
+        min-width: 280px;
+        max-width: 280px;
+      }
+      
+      .discord-widget-container iframe {
+        width: 280px !important;
+        height: 350px !important;
+      }
+      
+      .discord-oauth-section {
+        padding: 8px;
+      }
+      
+      .discord-link-button {
+        font-size: 0.8em;
+        padding: 6px 12px;
+      }
+    }
+  `;
+  
+  // Inject CSS if not already present
+  if (!document.getElementById("discord-widget-css")) {
+    const styleElement = document.createElement("style");
+    styleElement.id = "discord-widget-css";
+    styleElement.textContent = widgetCSS;
+    document.head.appendChild(styleElement);
+  }
+</script>
