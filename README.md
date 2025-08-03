@@ -1,67 +1,161 @@
-# Discourse Discord Widget
+Discord OAuth Integration
+This theme component now includes Discord OAuth integration, allowing users to link their Discord accounts directly from your Discourse forum.
 
-## 🔍 Overview
+🚀 New Features
+One-click Discord linking from the widget dropdown
+Visual Discord status showing linked usernames
+Discord usernames in posts (optional)
+Secure OAuth flow with CSRF protection
+Mobile-friendly popup interface
+Unlink functionality with confirmation dialog
+📋 Setup Requirements
+1. Create Discord Application
+Go to Discord Developer Portal
+Click "New Application" and give it a name
+Go to OAuth2 > General
+Add redirect URI: https://your-oauth-service.com/auth/discord/callback
+Note your Client ID and Client Secret
+2. Deploy OAuth Service
+You need to deploy a separate OAuth service to handle the Discord authentication. We provide a complete Express.js application for this.
 
-This theme component allows you to add a Discord Widget as a dropdown to your Discourse site header.
+Quick Deploy Options:
+Heroku:Show Image
 
-![Banner Image](.github/images/banner.png)
+Railway:Show Image
 
-## ⚙️ Configuration & Setup
+Environment Variables:
+env
+DISCOURSE_BASE_URL=https://your-discourse-site.com
+DISCOURSE_API_KEY=your_discourse_api_key
+DISCOURSE_FIELD_ID=8
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+DISCORD_REDIRECT_URI=https://your-oauth-service.com/auth/discord/callback
+3. Create Discourse User Field
+Go to Admin > Customize > User Fields
+Click Add User Field
+Configure:
+Name: Discord Username
+Description: Your Discord username
+Field Type: Text
+Editable: ✓ (users can edit)
+Show on profile: ✓ (optional)
+Note the Field ID (usually a number like 8)
+4. Configure Theme Settings
+In your Discourse admin:
 
-### How to Setup the Component
+Go to Customize > Themes
+Select your Discord Widget theme
+Configure these settings:
+OAuth Settings:
+discord_oauth_service_url: https://your-oauth-service.herokuapp.com
+discord_field_id: 8 (or your user field ID)
+show_discord_linking: ✓ Enable
+discord_link_text: 🔗 Link Discord Account
+Optional Settings:
+show_discord_in_posts: Show Discord usernames in posts
+require_discord_link: Require linking before accessing widget
+discord_unlink_text: Text for unlink button
+🎯 User Experience
+For Users:
+Click Discord icon in header → Widget dropdown opens
+See "Link Discord Account" button → Click to start OAuth
+Popup opens → Authorize on Discord
+Return to Discourse → See "Linked as: username" status
+Future visits → Discord username shows in posts (if enabled)
+Unlinking:
+Click "Unlink" button in widget
+Confirm in dialog
+Discord field cleared from profile
+🔧 Advanced Configuration
+Custom User Field Location
+If you want to store Discord usernames in a different field:
 
-#### Add your Server
+Create/identify your user field
+Update discord_field_id setting
+Restart your OAuth service if needed
+Mobile Behavior
+Widget: Shows OAuth integration in dropdown
+Invite Link: Direct link to Discord app (if configured)
+Responsive: Optimized for mobile screens
+Security Features
+CSRF Protection: State tokens prevent attacks
+Rate Limiting: 5 attempts per IP per 15 minutes
+Input Validation: Username format verification
+Secure OAuth: Official Discord OAuth 2.0 flow
+🛠 Troubleshooting
+Common Issues:
+"OAuth service not configured"
 
-To find your Server ID navigate to:
+Set discord_oauth_service_url in theme settings
+Ensure OAuth service is deployed and accessible
+"Permission denied"
 
-1. Server Settings
-   - ![Server Settings](.github/images/server-settings.png)
-2. Widget Settings
-   - ![Widget Settings](.github/images/widget-settings.png)
-3. Enable Server Widget
-   - ![Enable Widget](.github/images/enable-server-widget.png)
-4. Copy Server ID
-   - ![Server ID](.github/images/server-id.png)
-5. Paste it in your theme settings:
-   - ![Server ID Theme](.github/images/server-id-theme.png)
+Check Discourse API key permissions
+Verify DISCOURSE_API_KEY environment variable
+Popup blocked
 
-#### Add your Invite URL
+Modern browsers may block popups
+Users need to allow popups for your site
+Discord app not found
 
-On mobile, the Discord widget is replaced with an invite link so that users can open the server in the Discord app itself. This requires the invite url.
+Verify DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
+Check redirect URI matches exactly
+Debug Mode:
+Visit https://your-oauth-service.com/auth/status (development only) to see:
 
-To generate an invite url:
+Active OAuth states
+Recent authentication attempts
+Configuration status
+🔗 API Endpoints
+Your OAuth service provides these endpoints:
 
-1. Edit a specific channel setting
-   - ![Edit Channel](.github/images/edit-channel.png)
-2. Select Invites on the Left Sidebar
-   - ![Invite Sidebar](.github/images/select-invites.png)
-3. Select "Create One"
-   - ![Edit Invite Link](.github/images/edit-invite-link.png)
-4. Set Invite to Expire After: "Never":
-   - ![Edit Invite Expiration](.github/images/invite-no-expiry.png)
-5. Select Generate New Link Button
-6. Copy the generated new link to the theme setting entitled: `discord_invite_url`
+GET /auth/discord?discourse_user=username - Start OAuth flow
+GET /auth/discord/callback - OAuth callback
+POST /api/unlink - Unlink Discord account
+GET /api/discord-status/:username - Check link status
+GET /health - Service health check
+📱 Mobile Support
+The theme automatically detects mobile devices and:
 
-### Settings
+Uses responsive popup sizing
+Falls back to invite link if configured
+Optimizes button layouts for touch
+🎨 Customization
+Styling Discord Elements:
+css
+/* Custom Discord username styling */
+.discord-username {
+  color: #5865F2;
+  font-weight: bold;
+}
 
-The theme allows for a variety of settings. Below are some details on each setting.
+/* Custom link button styling */
+.discord-link-button {
+  background: linear-gradient(45deg, #5865F2, #7289DA);
+}
+Custom Link Text:
+Use theme settings or modify the templates to customize:
 
-#### `require_login`
+Link button text
+Unlink button text
+Status messages
+Error messages
+🔄 Migration from Old Version
+If upgrading from a previous version:
 
-Select to only shows the widget to logged in users.
+Backup your settings before updating
+Deploy OAuth service (new requirement)
+Update theme settings with OAuth URL
+Test OAuth flow with a test user
+Notify users about new linking feature
+📚 Additional Resources
+Discord Developer Documentation
+Discourse Theme Development
+OAuth 2.0 Specification
+For support, please create an issue in the GitHub repository with:
 
-#### `minimum_trust_level`
-
-Based on Discourse's Trust Level System [(more info)](https://blog.discourse.org/2018/06/understanding-discourse-trust-levels/). Enter a number value representing the trust level a user must be at in order to see the widget.
-
-#### `require_staff`
-
-Select to only show the widget to staff members (moderators and admins).
-
-#### `required_groups`
-
-Use the dropdown to select one or more groups. Users in **any** of the groups listed will be able to see the widget.
-
-#### `theme`
-
-Toggle the theme of the Discord widget. Select either light/dark to force set a theme or select 'auto' to have the theme automatically be chosen based on Discourse scheme.
+Discourse version
+Theme version
+Error messages
+Browser console logs
